@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE_URL } from '../config/api';
 import {
   Box,
   Container,
@@ -107,7 +108,8 @@ function Dashboard() {
       const config = { headers: { Authorization: `Bearer ${token}` } };
       
       // Load user profile data
-      const userRes = await axios.get('http://localhost:5001/api/users/profile', config);
+      const userRes = await axios.get(`${API_BASE_URL}/api/users/profile`, config);
+      
       
       // Load dashboard stats (example - update with your actual API endpoint)
       // const statsRes = await axios.get('http://localhost:5001/api/dashboard/stats', config);

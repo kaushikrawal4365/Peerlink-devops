@@ -22,6 +22,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
 const MotionPaper = motion(Paper);
 
@@ -48,7 +49,7 @@ function Auth() {
     try {
       if (isLogin) {
         // Login
-        const response = await axios.post('http://localhost:5001/api/auth/login', {
+        const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
           email: formData.email,
           password: formData.password,
         });
@@ -79,14 +80,14 @@ function Auth() {
           throw new Error('Passwords do not match');
         }
         // First, create the user
-        const signupResponse = await axios.post('http://localhost:5001/api/auth/signup', {
+        const signupResponse = await axios.post(`${API_BASE_URL}/api/auth/signup`, {
           name: formData.name,
           email: formData.email,
           password: formData.password,
         });
         
         // Then login to get the token
-        const loginResponse = await axios.post('http://localhost:5001/api/auth/login', {
+        const loginResponse = await axios.post(`${API_BASE_URL}/api/auth/login`, {
           email: formData.email,
           password: formData.password,
         });

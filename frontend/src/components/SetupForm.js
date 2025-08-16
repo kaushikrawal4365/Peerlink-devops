@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE_URL } from '../config/api';
 import {
   Box,
   Typography,
@@ -105,7 +106,7 @@ const SetupForm = () => {
       // First, update the user's profile with bio and subjects
       try {
         const response = await axios.put(
-          'http://localhost:5001/api/users/profile',
+          `${API_BASE_URL}/api/users/profile`,
           {
             bio,
             subjectsToTeach,

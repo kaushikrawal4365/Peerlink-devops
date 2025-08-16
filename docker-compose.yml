@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongo:
+    image: mongo:5.0
+    container_name: peerlink-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: peerlink
+    volumes:
+      - mongo_data:/data/db
+
+  # Backend Service
+  backend:
+    build: ./backend
+    container_name: peerlink-backend
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://mongo:27017/peerlink
+      - JWT_SECRET=your-jwt-secret-key
+      - PORT=5001
+    depends_on:
+      - mongo
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  # Frontend Service
+  frontend:
+    build: ./frontend
+    container_name: peerlink-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://10.166.179.26:5001
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  mongo_data:

@@ -35,21 +35,21 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "http://10.166.179.26:3000"],
     methods: ["GET", "POST"]
   }
 });
 
 // --- Global Middleware ---
 app.set('io', io); // Make io accessible to all routes
-app.use(cors());
+app.use(cors({
+  origin: ["http://localhost:3000", "http://10.166.179.26:3000"],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.static(__dirname)); // Serve static files for testing
 
 // --- API Route Definitions ---
-
-// Mount match routes
-app.use('/api/matches', matchRoutes);
 
 // Authentication Routes
 app.post('/api/auth/signup', async (req, res) => {
@@ -359,66 +359,7 @@ const updateProfile = async (req, res) => {
 app.put('/api/users/me', authMiddleware, updateProfile);
 app.put('/api/users/profile', authMiddleware, updateProfile);
 
-// Admin User Management Routes
-app.get('/api/users', authMiddleware, async (req, res) => {
-  try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ error: 'Unauthorized' });
-    }
-    const users = await User.find({}).select('-password');
-    res.json(users);
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
 
-app.put('/api/users/:id/status', authMiddleware, async (req, res) => {
-  try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ error: 'Unauthorized' });
-    }
-    
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    if (user.isAdmin) {
-      return res.status(403).json({ error: 'Cannot modify admin status' });
-    }
-    
-    user.status = req.body.status;
-    await user.save();
-    res.json(user);
-  } catch (error) {
-    console.error('Error updating user status:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-app.delete('/api/users/:id', authMiddleware, async (req, res) => {
-  try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ error: 'Unauthorized' });
-    }
-    
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    if (user.isAdmin) {
-      return res.status(403).json({ error: 'Cannot delete admin user' });
-    }
-    
-    await User.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
 
 // Core Application Routes
 app.use('/api/admin', authMiddleware, adminRoutes);

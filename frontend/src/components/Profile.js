@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config/api';
 import {
   Box,
   Container,
@@ -109,8 +110,8 @@ const Profile = () => {
       
       try {
         const endpoint = urlUserId 
-          ? `http://localhost:5001/api/users/${urlUserId}`
-          : 'http://localhost:5001/api/users/me';
+          ? `${API_BASE_URL}/api/users/${urlUserId}`
+          : `${API_BASE_URL}/api/users/me`;
         
         console.log('Fetching profile from:', endpoint);
         const response = await axios.get(endpoint, {
@@ -231,7 +232,7 @@ const Profile = () => {
       // Update server if authenticated
       const token = localStorage.getItem('token');
       if (token) {
-        axios.put('http://localhost:5001/api/users/profile', updatedProfile, {
+        axios.put(`${API_BASE_URL}/api/users/profile`, updatedProfile, {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(console.error);
       }
@@ -345,7 +346,7 @@ const Profile = () => {
         formData.append('profileImage', editProfile.profileImage);
         
         // Upload the image
-        const uploadResponse = await axios.post('http://localhost:5001/api/upload', formData, {
+        const uploadResponse = await axios.post(`${API_BASE_URL}/api/upload`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -402,7 +403,7 @@ const Profile = () => {
           };
           
           // Update the profile on the server
-          const response = await axios.put('http://localhost:5001/api/users/profile', payload, {
+          const response = await axios.put(`${API_BASE_URL}/api/users/profile`, payload, {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`

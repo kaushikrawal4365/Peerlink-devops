@@ -63,9 +63,6 @@ const getPotentialMatches = async (req, res) => {
  * @access  Private
  */
 const respondToMatch = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  
   try {
     const { status } = req.body;
     const { userId: targetUserId } = req.params;
@@ -73,7 +70,6 @@ const respondToMatch = async (req, res) => {
     console.log(`🔄 Processing ${status} request from ${req.user._id} to ${targetUserId}`);
 
     if (!['accepted', 'rejected', 'pending'].includes(status)) {
-      await session.abortTransaction();
       return res.status(400).json({ 
         success: false, 
         error: 'Invalid status. Must be "accepted", "rejected", or "pending"' 
@@ -82,12 +78,11 @@ const respondToMatch = async (req, res) => {
 
     // Get both users
     const [currentUser, targetUser] = await Promise.all([
-      User.findById(req.user._id).session(session).select('+matches +connections'),
-      User.findById(targetUserId).session(session).select('+matches +connections')
+      User.findById(req.user._id).select('+matches +connections'),
+      User.findById(targetUserId).select('+matches +connections')
     ]);
 
     if (!targetUser) {
-      await session.abortTransaction();
       return res.status(404).json({ 
         success: false, 
         error: 'User not found' 
@@ -108,7 +103,6 @@ const respondToMatch = async (req, res) => {
       );
       
       if (hasExistingPending) {
-        await session.abortTransaction();
         return res.status(400).json({
           success: false,
           error: 'A pending request already exists with this user'
@@ -135,11 +129,9 @@ const respondToMatch = async (req, res) => {
       });
       
       await Promise.all([
-        currentUser.save({ session }),
-        targetUser.save({ session })
+        currentUser.save(),
+        targetUser.save()
       ]);
-      
-      await session.commitTransaction();
       
       return res.json({
         success: true,
@@ -155,7 +147,6 @@ const respondToMatch = async (req, res) => {
       );
       
       if (targetMatchIndex === -1) {
-        await session.abortTransaction();
         return res.status(400).json({
           success: false,
           error: 'No pending request found from this user'
@@ -197,11 +188,9 @@ const respondToMatch = async (req, res) => {
       targetUser.matches[targetMatchIndex].updatedAt = now;
       
       await Promise.all([
-        currentUser.save({ session }),
-        targetUser.save({ session })
+        currentUser.save(),
+        targetUser.save()
       ]);
-      
-      await session.commitTransaction();
       
       return res.json({
         success: true,
@@ -229,8 +218,7 @@ const respondToMatch = async (req, res) => {
         });
       }
       
-      await currentUser.save({ session });
-      await session.commitTransaction();
+      await currentUser.save();
       
       return res.json({
         success: true,
@@ -240,15 +228,12 @@ const respondToMatch = async (req, res) => {
     }
   } catch (error) {
     console.error('❌ Error processing match response:', error);
-    await session.abortTransaction();
     
     return res.status(500).json({
       success: false,
       error: 'An error occurred while processing your request',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
-  } finally {
-    session.endSession();
   }
 };
 
@@ -366,30 +351,25 @@ const getConnections = async (req, res) => {
  * @access  Private
  */
 const likeUser = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  
   try {
     const currentUserId = req.user._id;
     const targetUserId = req.params.userId;
 
     // Validate user ID
     if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
-      await session.abortTransaction();
       return res.status(400).json({ 
         success: false,
         error: 'Invalid user ID' 
       });
     }
 
-    // Get users with session
+    // Get users without session
     const [currentUser, targetUser] = await Promise.all([
-      User.findById(currentUserId).session(session),
-      User.findById(targetUserId).session(session)
+      User.findById(currentUserId),
+      User.findById(targetUserId)
     ]);
 
     if (!targetUser) {
-      await session.abortTransaction();
       return res.status(404).json({ 
         success: false,
         error: 'User not found' 
@@ -452,13 +432,11 @@ const likeUser = async (req, res) => {
       isMutual = true;
     }
 
+    // Save without session
     await Promise.all([
-      currentUser.save({ session }),
-      targetUser.save({ session })
+      currentUser.save(),
+      targetUser.save()
     ]);
-
-    await session.commitTransaction();
-    session.endSession();
 
     res.json({
       success: true,
@@ -469,9 +447,6 @@ const likeUser = async (req, res) => {
     });
 
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    
     console.error('Error liking user:', {
       error: error.message,
       stack: error.stack,

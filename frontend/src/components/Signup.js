@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE_URL } from '../config/api';
 import {
   Box,
   Paper,
@@ -11,7 +12,7 @@ import {
   Container,
   CircularProgress,
   Alert,
-  Stack,
+
   Stepper,
   Step,
   StepLabel,
@@ -112,13 +113,13 @@ function Signup() {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5001/api/auth/signup', {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/signup`, {
         name: formData.name,
         email: formData.email,
         password: formData.password,
       });
 
-      const { token, isAdmin, name, isProfileComplete } = response.data;
+      const { token, isProfileComplete } = response.data;
       
       await login(token, { isProfileComplete });
       

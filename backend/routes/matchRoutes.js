@@ -45,52 +45,39 @@ router.get('/connections', auth, getConnections);
  * @access  Private
  */
 router.delete('/connections/:userId', auth, async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  
   try {
     const currentUserId = req.user._id;
     const { userId } = req.params;
 
     // Validate user ID
     if (!mongoose.Types.ObjectId.isValid(userId)) {
-      await session.abortTransaction();
       return res.status(400).json({ error: 'Invalid user ID' });
     }
 
     // Remove connection from both users
     await User.findByIdAndUpdate(
       currentUserId,
-      { $pull: { connections: userId } },
-      { session }
+      { $pull: { connections: userId } }
     );
 
     await User.findByIdAndUpdate(
       userId,
-      { $pull: { connections: currentUserId } },
-      { session }
+      { $pull: { connections: currentUserId } }
     );
 
     // Update match status to rejected
     await User.updateOne(
       { _id: currentUserId, 'matches.user': userId },
-      { $set: { 'matches.$.status': 'rejected' } },
-      { session }
+      { $set: { 'matches.$.status': 'rejected' } }
     );
 
     await User.updateOne(
       { _id: userId, 'matches.user': currentUserId },
-      { $set: { 'matches.$.status': 'rejected' } },
-      { session }
+      { $set: { 'matches.$.status': 'rejected' } }
     );
-
-    await session.commitTransaction();
-    session.endSession();
 
     res.json({ success: true, message: 'Connection removed successfully' });
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
     console.error('Error removing connection:', error);
     res.status(500).json({ error: 'Server error while removing connection' });
   }

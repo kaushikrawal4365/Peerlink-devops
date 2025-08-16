@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
 const AuthContext = createContext({
   token: null,
@@ -20,7 +21,7 @@ export const AuthProvider = ({ children }) => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         try {
-          const response = await axios.get('http://localhost:5001/api/users/me', {
+          const response = await axios.get(`${API_BASE_URL}/api/users/me`, {
             headers: { Authorization: `Bearer ${storedToken}` }
           });
           setUser(response.data);
@@ -41,7 +42,7 @@ export const AuthProvider = ({ children }) => {
     setToken(token);
     
     try {
-      const response = await axios.get('http://localhost:5001/api/users/me', {
+      const response = await axios.get(`${API_BASE_URL}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       // Merge the server response with any additional user data (like isProfileComplete)
